@@ -20,7 +20,14 @@ def return_404(client_version):
         "Connection: close\r\n"
         "\r\n")
         return response_header
-    
+
+def return_405(client_version):
+        response_header = (
+        f"{client_version} 405 Method Not Allowed \r\n"
+        "Connection: close\r\n"
+        "\r\n")
+        return response_header
+
 def return_400():
         response_header = (
             "400 Bad Request \r\n"
@@ -47,7 +54,16 @@ while True:
 
     msg_decode = msg.decode()
     first_line = msg_decode.split("\r\n")[0]
-    if len(first_line.split()) == 3:
+    
+    if len(first_line.split()) != 3 or not client_version.startswith("HTTP/"):
+        header = return_400().encode()
+        connection_socket.send(header)
+        connection_socket.close()
+    elif method != "GET":
+        header = return_405(client_version).encode()
+        connection_socket.send(header)
+        connection_socket.close()        
+    else:
         method = first_line.split()[0]
         path = first_line.split()[1]
         client_version = first_line.split()[2]
@@ -69,7 +85,3 @@ while True:
         
         connection_socket.close()
 
-    else:
-        header = return_400().encode()
-        connection_socket.send(header)
-        connection_socket.close()

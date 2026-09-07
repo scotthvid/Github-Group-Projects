@@ -1,0 +1,75 @@
+#! /usr/bin/env python3
+
+from socket import AF_INET, SOCK_STREAM, socket
+
+server_port = 15000
+server_socket = socket(AF_INET, SOCK_STREAM)
+try:
+    server_socket.bind(("", server_port))
+except: server_port = int(input("Port already in use, give a different port:"))
+
+def read_file(file_path):
+
+    with open("." +file_path,"r") as f:
+        file_content = f.read()
+        return file_content.encode()
+
+def return_404(client_version):
+        response_header = (
+        f"{client_version} 404 Not Found \r\n"
+        "Connection: close\r\n"
+        "\r\n")
+        return response_header
+    
+def return_400():
+        response_header = (
+            "400 Bad Request \r\n"
+            "Connection: close\r\n"
+            "\r\n")
+        return response_header
+
+def return_200(file_to_send, client_version):
+        response_header = (
+        f"{client_version} 200 OK \r\n"
+        "Content-Type: text/html\r\n"
+        f"Content-Length: {len(file_to_send)}\r\n"
+        "Connection: close\r\n"
+        "\r\n")
+        return response_header
+    
+
+server_socket.listen(1)
+print("The server is ready to recieve.")
+while True:
+    connection_socket, addr = server_socket.accept()
+    msg = connection_socket.recv(2048)
+    print(f"This address has connected {addr}")
+
+    msg_decode = msg.decode()
+    first_line = msg_decode.split("\r\n")[0]
+    if len(first_line.split()) == 3:
+        method = first_line.split()[0]
+        path = first_line.split()[1]
+        client_version = first_line.split()[2]
+        
+        if path == "/" or path == "/index.html":
+            file_to_send = read_file("/index.html")
+            header = return_200(file_to_send, client_version).encode()
+            connection_socket.send(header)
+            connection_socket.send(file_to_send)
+
+        elif path == "/test.html":
+            file_to_send = read_file(path)
+            header = return_200(file_to_send, client_version).encode()
+            connection_socket.send(header)
+            connection_socket.send(file_to_send)
+        else:
+            header = return_404(client_version).encode()
+            connection_socket.send(header)
+        
+        connection_socket.close()
+
+    else:
+        header = return_400().encode()
+        connection_socket.send(header)
+        connection_socket.close()

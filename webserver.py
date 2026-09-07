@@ -61,39 +61,40 @@ while True:
     msg_decode = msg.decode()
     first_line = msg_decode.split("\r\n")[0]
 
-    method = first_line.split()[0]
-    path = first_line.split()[1]
-    client_version = first_line.split()[2]
-    date_and_time = datetime.now()
-    
+
     if len(first_line.split()) != 3 or not client_version.startswith("HTTP/"):
         header = return_400().encode()
         log(date_and_time, addr[0], first_line, 400, 0)
         connection_socket.send(header)
         connection_socket.close()
-    elif method != "GET":
-        header = return_405(client_version).encode()
-        log(date_and_time, addr[0], first_line, 405, 0)
-        connection_socket.send(header)
-        connection_socket.close()        
-    else:        
-        if path == "/" or path == "/index.html":
-            file_to_send = read_file("/index.html")
-            header = return_200(file_to_send, client_version).encode()
-            log(date_and_time, addr[0], first_line, 200, len(file_to_send))
+    else:
+        method = first_line.split()[0]
+        path = first_line.split()[1]
+        client_version = first_line.split()[2]
+        date_and_time = datetime.now()
+        if method != "GET":
+            header = return_405(client_version).encode()
+            log(date_and_time, addr[0], first_line, 405, )
             connection_socket.send(header)
-            connection_socket.send(file_to_send)
+            connection_socket.close()        
+        else:        
+            if path == "/" or path == "/index.html":
+                file_to_send = read_file("/index.html")
+                header = return_200(file_to_send, client_version).encode()
+                log(date_and_time, addr[0], first_line, 200, len(file_to_send))
+                connection_socket.send(header)
+                connection_socket.send(file_to_send)
 
-        elif path == "/test.html":
-            file_to_send = read_file(path)
-            header = return_200(file_to_send, client_version).encode()
-            log(date_and_time, addr[0], first_line, 200, len(file_to_send))
-            connection_socket.send(header)
-            connection_socket.send(file_to_send)
-        else:
-            header = return_404(client_version).encode()
-            log(date_and_time, addr[0], first_line, 404, 0)
-            connection_socket.send(header)
+            elif path == "/test.html":
+                file_to_send = read_file(path)
+                header = return_200(file_to_send, client_version).encode()
+                log(date_and_time, addr[0], first_line, 200, len(file_to_send))
+                connection_socket.send(header)
+                connection_socket.send(file_to_send)
+            else:
+                header = return_404(client_version).encode()
+                log(date_and_time, addr[0], first_line, 404, 0)
+                connection_socket.send(header)
         
         connection_socket.close()
 
